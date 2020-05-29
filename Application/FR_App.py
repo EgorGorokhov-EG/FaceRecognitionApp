@@ -13,11 +13,12 @@ from PIL import ImageTk, Image
 
 class FaceRecognizerApp(tk.Tk):
     def __init__(self):
+        current_dir = os.getcwd()
         #  All model needed for a face recognition
-        self.detectorConfig = r"D:\Python Projects\Face Recognition\pretrained models\deploy.prototxt"
-        self.detectorFile = r"D:\Python Projects\Face Recognition\pretrained models\res10_300x300_ssd_iter_140000.caffemodel"
-        self.predictorFile = r"D:\Python Projects\Face Recognition\pretrained models\shape_predictor_68_face_landmarks.dat"
-        self.embedderFile = r"D:\Python Projects\Face Recognition\pretrained models\nn4.v2.t7"
+        self.detectorConfig = current_dir + r"\pretrained models\deploy.prototxt"
+        self.detectorFile = current_dir + r"\pretrained models\res10_300x300_ssd_iter_140000.caffemodel"
+        self.predictorFile = current_dir + r"\pretrained models\shape_predictor_68_face_landmarks.dat"
+        self.embedderFile = current_dir + r"\pretrained models\nn4.v2.t7"
 
         super(FaceRecognizerApp, self).__init__()
 
