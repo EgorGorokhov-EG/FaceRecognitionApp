@@ -25,59 +25,89 @@ class FaceRecognizerApp(tk.Tk):
         #  Parameters of the main window
         self.title("Recognizer")
         self.geometry("800x600")
+        self.configure(background='black')
 
         # Elements in the window
         # Label Frames
-        self.label_photo = tk.LabelFrame(self, text="Current Photo", padx=10, pady=10)
-        self.label_photo.grid(column=0, row=1)
-        self.label_loading = tk.LabelFrame(self, text="Load Photos", padx=10, pady=10)
+        self.label_photo = tk.LabelFrame(self, text="Current Photo", padx=10, pady=10, background='black', foreground="white")
+        self.label_photo.grid(column=0, row=1, sticky='W')
+        self.label_loading = tk.LabelFrame(self, text="Load Photos", padx=10, pady=10, background='black', foreground="white")
         self.label_loading.grid(column=1, row=0, sticky='N')
-        self.label_display = tk.LabelFrame(self, text="Display")
+        self.label_display = tk.LabelFrame(self, text="Display", background='black', foreground="white")
         self.label_display.grid(column=0, row=0)
 
         #  Labels
-        self.loading_stat = tk.Label(self.label_loading, text="Default photos loaded")
+        self.loading_stat = tk.Label(self.label_loading, text="Default photos loaded", background='black', foreground="white")
         self.loading_stat.grid(column=0, row=1)
-        self.prediction = tk.Label(self.label_photo, text="")
+        self.prediction = tk.Label(self.label_photo, text="", anchor='center', background='black', foreground="white")
         self.prediction.grid(column=0, row=1)
 
-        self.display = tk.Canvas(self.label_display)
+        self.display = tk.Canvas(self.label_display, background='black')
         self.display.grid(column=0, row=0)
+
+        #  Declaring all images that will be used
         self.current_photo = None
         self.img = None
+        self.button_recognize_img = ImageTk.PhotoImage(Image.open(r"D:\Python Projects\Face Recognition\GUI\Button.png"))
+        self.button_select_img = ImageTk.PhotoImage(Image.open(r"D:\Python Projects\Face Recognition\GUI\Button1.png"))
 
         self.names = []  # List of all names in dataset
 
         self.button()
         self.button_lp()
-        self.button_recognizze()
+        self.button_recognize()
 
     def button(self):
-        btn = tk.Button(self.label_photo, text="Select", width=8, command=self.choose_photo)
+        btn = tk.Button(
+            self.label_photo,
+            command=self.choose_photo,
+            text="Select Photo",
+            background='black',
+            foreground='white'
+        )
         btn.grid(column=0, row=0)
 
     def button_lp(self):
-        btn = tk.Button(self.label_loading, text="Load photos", command=self.load_photos)
+        btn = tk.Button(
+            self.label_loading,
+            text="Load photos",
+            command=self.load_photos,
+            background='black',
+            foreground='white'
+        )
         btn.grid(column=0, row=0)
 
-    def button_recognizze(self):
-        btn = tk.Button(self.label_photo, text="Recognize", command=self.recognize)
+    def button_recognize(self):
+        btn = tk.Button(
+            self.label_photo,
+            command=self.recognize,
+            text="Recognize",
+            background='black',
+            foreground='white'
+        )
         btn.grid(column=1, row=0)
 
     def load_photos(self):
-        self.loading_stat.configure(text="Loading custom photos")
+        self.loading_stat.configure(text="Loading custom photos.\nPlease wait...")
         dir_path = filedialog.askdirectory(initialdir=os.getcwd(), title="Select Folder")
         self.convert_to_vecs(dir_path)
 
     def choose_photo(self):
 
-        self.current_photo = filedialog.askopenfilename(initialdir=os.getcwd(),
-                                                        title="Select File",
-                                                        filetypes=(("Photo", "*.jpg"), ("All files", "*.*")))
+        self.current_photo = filedialog.askopenfilename(
+            initialdir=os.getcwd(),
+            title="Select File",
+            filetypes=(("Photo", "*.jpg *.jpeg *.png"), ("All files", "*.*"))
+        )
+
         file = Image.open(self.current_photo)
         width, height = file.size
-        res_width = int(width/4)
-        res_height = int(height/4)
+        if width > 1000 or height > 1000:
+            res_width = int(width/8)
+            res_height = int(height/8)
+        else:
+            res_width = width
+            res_height = height
         file = file.resize((res_width, res_height))
         self.img = ImageTk.PhotoImage(file)
         self.display.configure(width=res_width, height=res_height)
@@ -86,9 +116,15 @@ class FaceRecognizerApp(tk.Tk):
     def recognize(self):
         if self.current_photo is not None:
             pred, probas = self.fit_predict(self.current_photo)
-            self.prediction.configure(text="It is " + pred[0])
+            prediction = pred[0][0].split("_")
+            name = ''
+            for i in range(len(prediction)):
+                name += prediction[i].capitalize()
+                name += ' '
+
+            self.prediction.configure(text=name)
         else:
-            messagebox.showerror("No Photo Selected", "No photo selected. Please, select a file")
+            messagebox.showerror("No Photo Selected", "No photo selected. Please, select a file first.")
 
     def convert_to_vecs(self, images_path):
         """
@@ -111,20 +147,30 @@ class FaceRecognizerApp(tk.Tk):
 
         i = 0
         for img_name in os.listdir(images_path):
+            print(img_name)
             label = img_name.split('.')[0]
             label = re.sub('[^a-z_]', '', label)
 
             img = cv2.imread(images_path + '/' + img_name)
             img = imutils.resize(img, width=600)
             gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
-            rect = detector_fa(gray, 5)[0]
+            rect = detector_fa(gray, 3)
+
+            #  make sure that face is detected or search again longer
+            if len(rect) != 0:
+                rect = rect[0]
+            else:
+                rect = detector_fa(gray, 5)[0]
 
             face_aligned = aligner.align(img, gray, rect)
-            face_blob = cv2.dnn.blobFromImage(face_aligned,
-                                              scalefactor=1. / 255,
-                                              size=(96, 96),
-                                              mean=(0, 0, 0),
-                                              swapRB=True)
+            face_blob = cv2.dnn.blobFromImage(
+                face_aligned,
+                scalefactor=1. / 255,
+                size=(96, 96),
+                mean=(0, 0, 0),
+                swapRB=True
+            )
+
             embedder.setInput(face_blob)
             vec = embedder.forward()
             vecs[:, i] = vec
@@ -132,15 +178,19 @@ class FaceRecognizerApp(tk.Tk):
             i += 1
             labels.append(label)
 
-        self.names = list(set(labels))
         model = CatBoostClassifier(verbose=False)
         data_Pool = Pool(vecs.T, labels)
         model.fit(data_Pool)
         model.save_model('trained_model')
+
+        labels = list(set(labels))
+        for label in labels:
+            name = label.split('_')
+            for i in range(len(name)):
+                self.names.append(name[i].capitalize() + " ")
+
         print("Converting complete")
         self.loading_stat.configure(text="Custom photos loaded")
-
-        return vecs, labels
 
     def fit_predict(self, img_path):
         """
@@ -160,7 +210,13 @@ class FaceRecognizerApp(tk.Tk):
         img = cv2.imread(img_path)
         img = imutils.resize(img, width=600)
         gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
-        rect = detector_fa(gray, 5)[0]
+        rect = detector_fa(gray, 3)
+
+        #  make sure that face is detected or search again longer
+        if len(rect) != 0:
+            rect = rect[0]
+        else:
+            rect = detector_fa(gray, 5)[0]
 
         face_aligned = aligner.align(img, gray, rect)
 
@@ -171,11 +227,13 @@ class FaceRecognizerApp(tk.Tk):
         cv2.waitKey(0)
         '''
 
-        face_blob = cv2.dnn.blobFromImage(face_aligned,
-                                          scalefactor=1. / 255,
-                                          size=(96, 96),
-                                          mean=(0, 0, 0),
-                                          swapRB=True)
+        face_blob = cv2.dnn.blobFromImage(
+            face_aligned,
+            scalefactor=1. / 255,
+            size=(96, 96),
+            mean=(0, 0, 0),
+            swapRB=True
+        )
 
         embedder.setInput(face_blob)
         vec = embedder.forward()
