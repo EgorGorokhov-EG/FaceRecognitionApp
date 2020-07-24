@@ -1,6 +1,6 @@
 # FaceRecognitionApp
 
-It's very simple app made with Tkinter for detection and recognition faces defined in database. Initially in code used model pretrained on some photos loaded by me. People on these photos are: David Bowie, Freddie Mercury, Jimi Hendrix and photos of random people just to define a class "Undefined"
+It's very simple pet-project app made with Tkinter for detection and recognition faces defined in database. Initially in code used model pretrained on some photos loaded by me. People on these photos are: David Bowie, Freddie Mercury, Jimi Hendrix and photos of random people just to define a class "Undefined"
 
 # Demonstration
 When program is opened this window appears: 
